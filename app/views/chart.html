@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chart</title>
+    <style>
+        #h1{
+            text-align: center;
+        }
+        #h2{
+            text-align: center;
+        }
+        #dashboard_div{
+            margin: 0 auto;
+            width: 800px;
+            border: 1px solid #ccc;
+        }
+        #chart_div{
+            height:400px;
+            border-bottom: 1px solid #ccc;
+        }
+        #filter_div{
+            height:50px;
+        }
+    </style>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script type="text/javascript">
+        google.charts.load('current', {'packages':['corechart', 'controls']});
+
+        var config = {
+            api: {
+                enable: true,
+                interval: 1000 * 3,
+                exchange: "bitflyer",
+            },
+            candlestick: {
+                pair: "BTC_JPY",
+                duration: "5m",
+                limit: 365,
+                numViews: 5,
+            },
+        };
+
+        var exchanges = {
+            bitflyer: "Bitflyer",
+            gmocoin: "GMO Coin",
+            quoine: "Liquid by Quoine"
+        };
+
+        function drawChart(dataTable) {
+            var h1 = exchanges[config.api.exchange];
+            var h2 = config.candlestick.pair;
+            $("h1").text(h1);
+            $("h2").text(h2);
+            var chartDiv = document.getElementById('chart_div');
+            var charts = [];
+            var dashboard = new google.visualization.Dashboard(chartDiv);
+            var mainChart = new google.visualization.ChartWrapper({
+                chartType: 'ComboChart',
+                containerId: 'chart_div',
+                options: {
+                    hAxis: {'slantedText': false},
+                    legend: {'position': 'none'},
+                    candlestick: {
+                        fallingColor: { strokeWidth: 0, fill: '#a52714' },
+                        risingColor: { strokeWidth: 0, fill: '#0f9d58' }
+                    },
+                    seriesType: "candlesticks",
+                    series: {}
+                },
+                view: {
+                    columns: [
+                        {
+                            calc: function(d, rowIndex) {
+                                return d.getFormattedValue(rowIndex, 0);
+                            },
+                            type: 'string'
+                        }, 1, 2, 3, 4
+                    ]
+                }
+            });
+            charts.push(mainChart);
+
+            var options = mainChart.getOptions();
+            var view = mainChart.getView();
+
+            var controlWrapper = new google.visualization.ControlWrapper({
+                'controlType': 'ChartRangeFilter',
+                'containerId': 'filter_div',
+                'options': {
+                    'filterColumnIndex': 0,
+                    'ui': {
+                        'chartType': 'LineChart',
+                        'chartView': {
+                            'columns': [0, 4]
+                        }
+                    }
+                }
+            });
+
+            dashboard.bind(controlWrapper, charts);
+            dashboard.draw(dataTable);
+        }
+
+        function send() {
+            if (config.api.enable == false) {
+                return
+            }
+            var params = {
+                "pair": config.candlestick.pair,
+                "limit": config.candlestick.limit,
+                "duration": config.candlestick.duration,
+            }
+            $.get("/api/candle/", params).done(function (data) {
+                var dataTable = new google.visualization.DataTable();
+                dataTable.addColumn('date', 'Date');
+                dataTable.addColumn('number', 'Low');
+                dataTable.addColumn('number', 'Open');
+                dataTable.addColumn('number', 'Close');
+                dataTable.addColumn('number', 'High');
+                dataTable.addColumn('number', 'Volume');
+
+                var googleChartData = [];
+                var candles = data["candles"];
+
+                for(var i=0; i < candles.length; i++){
+                    var candle = candles[i];
+                    var date = new Date(candle.time);
+                    var datas = [date, candle.low, candle.open, candle.close, candle.high, candle.volume];
+
+                    googleChartData.push(datas)
+                }
+
+                dataTable.addRows(googleChartData);
+                drawChart(dataTable);
+            })
+        }
+
+        function postData(d) {
+            var body;
+            var closeExchange = config.api.exchange;
+            if (d.indexOf('_') !== -1) {
+                config.candlestick.pair = d;
+                body = JSON.stringify( { Pair: d } );
+            } else {
+                config.api.exchange = d;
+                body = JSON.stringify( { Open: d } );
+            }
+            $.ajax({
+                url: "/receive",
+                type: 'post',
+                data: body,
+                contentType: "application/json",
+                dataType: 'json'
+            });
+            
+            send();
+        }
+
+        function sleep(waitMsec) {
+            var startMsec = new Date();
+            while (new Date() - startMsec < waitMsec);
+        }
+
+        function changeDuration(d) {
+            config.candlestick.duration = d;
+            sned();
+        }
+
+
+        setInterval(send, 1000 * 3)
+        window.onload = function () {
+            send()
+
+            $('#dashboard_div').mouseenter(function() {
+                config.api.enable = false;
+            }).mouseleave(function() {
+                config.api.enable = true;
+            });
+        }
+    </script>
+</head>
+<body>
+
+<div>
+    <button onclick="postData('bitflyer');">Bitflyer</button>
+    <button onclick="postData('gmocoin');">GMO Coin</button>
+    <button onclick="postData('quoine');">Liquid by Quoine</button>
+</div>
+
+<div>
+    <button onclick="postData('BTC_JPY');">BTC/JPY</button>
+    <button onclick="postData('XRP_JPY');">XRP/JPY</button>
+    <button onclick="postData('ETH_JPY');">ETH/JPY</button>
+</div>
+<div>
+    <button onclick="changeDuration('1m');">1m</button>
+    <button onclick="changeDuration('5m');">5m</button>
+    <button onclick="changeDuration('30m');">30m</button>
+    <button onclick="changeDuration('1h');">1h</button>
+</div>
+<h1 id="h1">Bitflyer</h1>
+<h2 id="h2">BTC_JPY</h2>
+<div id="dashboard_div">
+    <div id="chart_div"></div>
+    <div id="filter_div"></div>
+</div>
+</body>
+</html>
