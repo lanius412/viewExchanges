@@ -1,0 +1,100 @@
+body {
+    overflow: hidden;
+}
+
+header {
+    margin-left: 10px;
+    font-size: 40px;
+}
+
+button {
+    cursor: pointer;
+}
+
+.head {
+    display: -webkit-flex;
+    display: flex;
+}
+
+.chart_name {
+    width: 67%;
+    display: inline-flex;
+    margin-left: 10px;
+    font-family: "Noto Sans JP", sans-serif;
+    padding: 0;
+}
+#heading_pair-icon {
+    width: 24px;
+    height: 24px;
+}
+.select-exchange {
+    flex: 1;
+    margin-left: auto;
+}
+.select-exchange button:hover {
+    background-color: #A9D1F5;
+}
+
+.btn-exchange {
+    height: 40px;
+    width: 150px;
+    border: solid;
+    text-align: center;
+    font-weight: bold;
+    font-size: 15px;
+    background-color: white;
+    color: #468ccb;
+}
+
+.chart_pair {
+    display: -webkit-flex;
+    display: flex;
+}
+
+.select-duration {
+    text-decoration: none;
+}
+
+.btn-duration {
+    width: 100px;
+    background-color: #fff;
+    color: #A9A9A9;
+    border: none;
+    font-size: 15px;
+    font-weight: bold;
+    text-underline-offset: 0.3em;
+}
+
+
+.chart {
+    width: 1000px;
+}
+.dashboard_div {
+    margin: 0 auto;
+    border: 1px solid #ccc;
+}
+.chart_div {
+    border-bottom: 1px solid #ccc;
+}
+
+
+
+.select-pair {
+    flex: 1;
+    display: inline-flex;
+    flex-direction: column;
+    height: 800px;
+}
+.select-pair button:hover {
+    background-color: #A9D1F5;
+}
+
+.btn-pair {
+    margin-top: 50px;
+    height: 100px;
+    border: solid;
+    font-size: 20px;
+    font-weight: bold;
+    background-color: #468ccb;
+    color:#fff;
+}

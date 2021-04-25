@@ -2,27 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Chart</title>
-    <style>
-        #h1{
-            text-align: center;
-        }
-        #h2{
-            text-align: center;
-        }
-        #dashboard_div{
-            margin: 0 auto;
-            width: 800px;
-            border: 1px solid #ccc;
-        }
-        #chart_div{
-            height:400px;
-            border-bottom: 1px solid #ccc;
-        }
-        #filter_div{
-            height:50px;
-        }
-    </style>
+    <title>viewExchanges</title>
+    <link rel="stylesheet" href="/static/layout.css">
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <script type="text/javascript">
@@ -48,11 +29,16 @@
             quoine: "Liquid by Quoine"
         };
 
+        var pair_icon = {
+            BTC_JPY: "/static/logo/Bitcoin.png",
+            XRP_JPY: "/static/logo/Ripple.png",
+            ETH_JPY: "/static/logo/Ethereum.png"
+        };
+
         function drawChart(dataTable) {
-            var h1 = exchanges[config.api.exchange];
-            var h2 = config.candlestick.pair;
-            $("h1").text(h1);
-            $("h2").text(h2);
+            var exchange = exchanges[config.api.exchange];
+            var pair = config.candlestick.pair;
+            $("h1").text(exchange+" Price Chart("+pair+")");
             var chartDiv = document.getElementById('chart_div');
             var charts = [];
             var dashboard = new google.visualization.Dashboard(chartDiv);
@@ -60,7 +46,10 @@
                 chartType: 'ComboChart',
                 containerId: 'chart_div',
                 options: {
-                    hAxis: {'slantedText': false},
+                    height: 400,
+                    hAxis: {
+                        slantedText: false,
+                    },
                     legend: {'position': 'none'},
                     candlestick: {
                         fallingColor: { strokeWidth: 0, fill: '#a52714' },
@@ -114,7 +103,7 @@
             }
             $.get("/api/candle/", params).done(function (data) {
                 var dataTable = new google.visualization.DataTable();
-                dataTable.addColumn('date', 'Date');
+                dataTable.addColumn('date', 'Time');
                 dataTable.addColumn('number', 'Low');
                 dataTable.addColumn('number', 'Open');
                 dataTable.addColumn('number', 'Close');
@@ -142,6 +131,9 @@
             var closeExchange = config.api.exchange;
             if (d.indexOf('_') !== -1) {
                 config.candlestick.pair = d;
+                var pair = config.candlestick.pair;
+                var img = document.getElementById("heading_icon");
+                img.src = pair_icon[pair]
                 body = JSON.stringify( { Pair: d } );
             } else {
                 config.api.exchange = d;
@@ -154,23 +146,30 @@
                 contentType: "application/json",
                 dataType: 'json'
             });
-            
             send();
-        }
-
-        function sleep(waitMsec) {
-            var startMsec = new Date();
-            while (new Date() - startMsec < waitMsec);
+            
         }
 
         function changeDuration(d) {
+            before_duration = config.candlestick.duration;
+            id = "dur_" + before_duration;
+            dur_btn = document.getElementById(id);
+            dur_btn.style.color = "#A9A9A9";
+            dur_btn.style.textDecoration = "none";
             config.candlestick.duration = d;
+            id = "dur_" + d;
+            dur_btn = document.getElementById(id);
+            dur_btn.style.color = "#468ccb";
+            dur_btn.style.textDecoration = "underline";
             sned();
         }
 
 
         setInterval(send, 1000 * 3)
         window.onload = function () {
+            initial_dur_id = document.getElementById("dur_5m");
+            initial_dur_id.style.color = "#468ccb";
+            initial_dur_id.style.textDecoration = "underline";
             send()
 
             $('#dashboard_div').mouseenter(function() {
@@ -182,29 +181,46 @@
     </script>
 </head>
 <body>
+<header>
+    <label>ViewExchanges</label>
+</header>
+<div class="contents">
+    <div class="head">
+        <div class="chart_name">
+            <h1>
+                Bitflyer Price Chart(BTC/JPY)
+            </h1>
+            <img id="heading_pair-icon" src="/static/logo/Bitcoin.png" />
+        </div>
+        <section class="select-exchange">
+            <button class="btn-exchange" onclick="postData('bitflyer');">Bitflyer</button>
+            <button class="btn-exchange" onclick="postData('gmocoin');">GMO Coin</button>
+            <button class="btn-exchange" onclick="postData('quoine');">Liquid by Quoine</button>
+        </section>
+    </div>
+    
+    <div class="chart_pair">
+        <section class="chart">
+            <div class="select-duration">
+                <button class="btn-duration" id="dur_1m" onclick="changeDuration('1m');">1 Min</button>
+                <button class="btn-duration" id="dur_5m" onclick="changeDuration('5m');">5 Min</button>
+                <button class="btn-duration" id="dur_30m"onclick="changeDuration('30m');">30 Min</button>
+                <button class="btn-duration" id="dur_1h" onclick="changeDuration('1h');">1 Hour</button>
+            </div>
+            <div id="dashboard_div">
+                <div id="chart_div"></div>
+                <div class="controller">
+                    <div id="filter_div"></div>
+                </div>
+            </div>
+        </section>
+        <section class="select-pair">
+            <button class="btn-pair" onclick="postData('BTC_JPY');">BTC/JPY</button>
+            <button class="btn-pair" onclick="postData('XRP_JPY');">XRP/JPY</button>
+            <button class="btn-pair" onclick="postData('ETH_JPY');">ETH/JPY</button>
+        </section>
+    </div>
+    
 
-<div>
-    <button onclick="postData('bitflyer');">Bitflyer</button>
-    <button onclick="postData('gmocoin');">GMO Coin</button>
-    <button onclick="postData('quoine');">Liquid by Quoine</button>
-</div>
-
-<div>
-    <button onclick="postData('BTC_JPY');">BTC/JPY</button>
-    <button onclick="postData('XRP_JPY');">XRP/JPY</button>
-    <button onclick="postData('ETH_JPY');">ETH/JPY</button>
-</div>
-<div>
-    <button onclick="changeDuration('1m');">1m</button>
-    <button onclick="changeDuration('5m');">5m</button>
-    <button onclick="changeDuration('30m');">30m</button>
-    <button onclick="changeDuration('1h');">1h</button>
-</div>
-<h1 id="h1">Bitflyer</h1>
-<h2 id="h2">BTC_JPY</h2>
-<div id="dashboard_div">
-    <div id="chart_div"></div>
-    <div id="filter_div"></div>
-</div>
 </body>
 </html>
